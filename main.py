@@ -1,3 +1,4 @@
+from algo import dijkstra
 import pygame
 pygame.init()  
 
@@ -16,12 +17,20 @@ yellow = (255, 255, 0)
 
 # dummy graph for now, will implement adding your own graph later
 my_graph = {
-    'A': ([('B', 1), ('C', 5), ('D', 3)], (275, 350)),
-    'B': ([('A', 1), ('C', 2)], (625, 250)),
-    'C': ([('A', 5), ('B', 2), ('D', 1), ('E', 7)], (625, 450)),
-    'D': ([('A', 3), ('C', 1), ('E', 4)], (275, 550)),
-    'E': ([('D', 4), ('C', 7)], (625, 650))
+    'A': [('B', 1), ('C', 5), ('D', 3)],
+    'B': [('A', 1), ('C', 2)],
+    'C': [('A', 5), ('B', 2), ('D', 1), ('E', 7)],
+    'D': [('A', 3), ('C', 1), ('E', 4)],
+    'E': [('D', 4), ('C', 7)]
 } 
+
+locations = {
+    'A' : (275, 350),
+    'B' : (625, 250),
+    'C' : (625, 450),
+    'D' : (275, 550),
+    'E' : (625, 650)
+}
 
 
 # text font
@@ -55,15 +64,15 @@ class Node():
     def setChildren(self, children):
         self.children = children
 
-def drawGraph(graph):
-    
+def drawGraph(graph, locations):
+
     for node in graph: 
-        node_pos = graph[node][1]
+        node_pos = locations[node]
 
         # draw edges
-        for child in graph[node][0]:
+        for child in graph[node]:
             child_key = child[0]
-            child_pos = graph[child_key][1]
+            child_pos = locations[child_key]
             weight = child[1]
             pygame.draw.line(screen, white, node_pos, child_pos)
             
@@ -83,8 +92,7 @@ def drawGraph(graph):
         # draw nodes
         pygame.draw.circle(screen, white, node_pos, 25)
         drawText(node, text_font, red, node_pos[0] - 5, node_pos[1] - 5)
-
-        
+    
             
     return
 
@@ -95,6 +103,7 @@ def drawText(text, font, color, x, y,):
 
 def main(): 
      
+    print(dijkstra(my_graph, 'A'))
 
     # game loop
     running = True  
@@ -109,7 +118,7 @@ def main():
             mouse_posStr = str(mouse_pos)
             drawText(mouse_posStr, text_font, red, mouse_pos[0], mouse_pos[1])
        
-        drawGraph(my_graph)
+        drawGraph(my_graph, locations)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
