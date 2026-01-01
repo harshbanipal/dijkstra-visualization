@@ -165,17 +165,35 @@ def main():
         mouse_posStr = str(mouse_pos)
         
         # dijkstra button
-        rect_pos = (730, 800)
         pygame.draw.rect(screen, yellow, (730, 800, 190, 85), border_radius = 25)
+        drawText("shortest paths", text_font, black, 775, 830)
         leftClick = pygame.mouse.get_pressed()[0] == True
-       
+        
         # dijkstra event
-        if leftClick and rect_pos <= mouse_pos <= (rect_pos[0] + 190, rect_pos[1] + 85):
+        if leftClick and (730 <= mouse_pos[0] <= 920) and (800 <= mouse_pos[1] <= 885):
             drawNodes(my_graph, locations)
             drawShortestPaths(my_graph, parents, locations)
-            pygame.draw.rect(screen, yellow, (730, 800, 190, 85), border_radius = 25)
+            pygame.draw.rect(screen, (255, 200, 75), (730, 800, 190, 85), border_radius = 25)
+            drawText("shortest paths", text_font, black, 775, 830)
+            
 
         # create my own graph event
+            '''
+            in this event, 
+            1)  let user drop nodes anywhere on screen
+                    -   record location of node and give the node key '0' and add 1 to key per node added
+                    -   create hashtable of nodes with empty values
+            2)  when two nodes are clicked on, create an edge between those two nodes
+                    -   give default weight of 1 to edge and add relationship to hash table: n1: {n2: 1}, n2: {n1: 1}
+                    -   record edge parents?
+            3)  maybe when user clicks on any sequence of nodes, each click is added to a queue and then create edges
+                in the order the user clicked the nodes in
+                    -   give default weight of 1, add relationships to hashtable?
+                            pop node from queue, peek at next node and update hash table
+            4)  user can click on an edge and edit the edge weight
+                    -   check if user clicks on rect, and then take in user input for weight-- check nodes between edges
+                        and update hashtable
+            '''
         '''
         if pygame.mouse.get_pressed()[0] == True:
             pygame.draw.circle(screen, yellow, mouse_pos, 25)

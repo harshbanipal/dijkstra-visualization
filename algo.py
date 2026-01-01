@@ -52,6 +52,8 @@ def dijkstra(G, s):
         parents.setdefault(v, None)
         Q.insert(v, (inf, inf))
 
+        # show each edge distance as infinity
+
 
     # Main loop
     while Q.heap:
@@ -63,12 +65,16 @@ def dijkstra(G, s):
         # For each neighbor v of u
         for v, weight_uv in G[u].items():
             # Update the best path length to v using edge (u, v) if it improves pi[v]
+
+            # show if current best dist > new dist
             if (pi[v], numEdges[v]) > (d[u] + weight_uv, edge_length_u + 1):
                 new_priority = (d[u] + weight_uv, edge_length_u +1)
                 Q.decrease_key(v, new_priority)
                 pi[v] = new_priority[0]
                 parents[v] = u
                 numEdges[v] = edge_length_u + 1
+
+                # show edge being added to shortest paths tree
 
     return d, parents
 
