@@ -1,6 +1,10 @@
-from algo import dijkstra
 import pygame
+
+from math import inf
+from priorityQue import MinPriorityQueue
+
 pygame.init()  
+
 
 # inititalize window
 screen = pygame.display.set_mode((1000,1000))    # create window 
@@ -13,6 +17,7 @@ black = (0,0,0)
 green = (0,255,0)
 red = (255,0,0)
 yellow = (255, 255, 0)
+blue = (0, 0, 255)
 
 
 # dummy graph and locations for now, will implement adding your own graph later
@@ -53,7 +58,9 @@ locations = {
 
 
 # text font
-text_font = pygame.font.SysFont('Arial', 12)
+def text_font(size):
+    font = pygame.font.SysFont('Arial', size)
+    return font
 
 
 # node class
@@ -86,7 +93,7 @@ class Node():
 
 def drawNode(name, text_color, node_color, pos, size):
     pygame.draw.circle(screen, node_color, pos, size)
-    drawText(name, text_font, text_color, pos[0] - 5, pos[1] - 5)
+    drawText(name, text_font(12), text_color, pos[0] - 5, pos[1] - 5)
 
 
 def drawNodes(graph, locations):
@@ -122,7 +129,7 @@ def drawEdges(graph, locations, edge_color, weights_bool):
                 else:
                     weight_ypos = child_pos[1] + abs(node_pos[1] - child_pos[1])/2
 
-                drawText(str(weight), text_font, red, weight_xpos + 5, weight_ypos + 5)
+                drawText(str(weight), text_font(12), red, weight_xpos + 5, weight_ypos + 5)
 
 
 def drawGraph(graph, locations):
@@ -147,9 +154,104 @@ def drawShortestPaths(graph, parents, locations):
         drawNode(node, red, white, locations[node], 25)
 
 
+
+
+# added dijkstra algo here instead to avoid circular import when updating display within dijkstra
+def dijkstra(G, s):
+
+    """
+    dijkstra implementation from my algorithms class homework 
+    Graph format: G[u][v] = weight l(u, v) the weights might be integers or floats
+    Returns:    d: a dict mapping node -> shortest distance from s, 
+                parents: dict mapping node -> parent in shortest-path tree (s has parent None)
+    """
+    
+    # edge cases
+    for u, neighbors in G.items():
+        for v, weight in neighbors.items():
+            if weight < 0:
+                raise ValueError("Dijkstra requires non-negative edge weights; found negative weight")
+
+
+    # Collect all vertices (include isolated / sink nodes that might only appear as neighbors)
+    vertices = set(G.keys())
+
+    # pi: current best-known distances (keys)
+    pi = {}
+
+    # d: finalized shortest distances
+    d = {}
+
+    # parents in shortest paths tree
+    parents = {s: None}
+
+    # number of edges to reach source 
+    numEdges = {}
+
+
+    # your implementation from part 1
+    Q = MinPriorityQueue()
+
+
+    # Initialize source
+    pi[s] = 0.0
+    numEdges[s] = 0
+    Q.insert(s, (0.0, 0))
+
+
+    # Initialize all other vertices to infinity
+    for v in vertices:
+        v_x = locations[v][0]
+        v_y = locations[v][1]
+        
+        if v == s:
+            drawText("0", text_font(50), blue, v_x + 10, v_y + 10)
+            continue
+        pi[v] = inf
+        numEdges[v] = inf
+        parents.setdefault(v, None)
+        Q.insert(v, (inf, inf))
+
+        #print(v)
+        drawText("infinity", text_font(50), blue, v_x + 10, v_y + 10)
+        # show each edge distance as infinity
+
+
+    # Main loop
+    while Q.heap:
+        u, (path_length_u, edge_length_u) = Q.extract_min()  # returns (element, priority)
+        d[u] = path_length_u
+        if path_length_u == inf:
+            continue
+
+        # For each neighbor v of u
+        for v, weight_uv in G[u].items():
+            # Update the best path length to v using edge (u, v) if it improves pi[v]
+
+            # show if current best dist > new dist
+            v_x = locations[v][0]
+            v_y = locations[v][1]
+            iteration = 1
+            sum = weight_uv + path_length_u
+            check_weight_str = str(path_length_u) + " + " + str(weight_uv) + " = " + str(sum) + " > " + str(pi[v])
+            drawText(check_weight_str, text_font(12), yellow, v_x + 20, v_y + (20 * iteration))
+            iteration += 12
+
+            if (pi[v], numEdges[v]) > (d[u] + weight_uv, edge_length_u + 1):
+                new_priority = (d[u] + weight_uv, edge_length_u +1)
+                Q.decrease_key(v, new_priority)
+                pi[v] = new_priority[0]
+                parents[v] = u
+                numEdges[v] = edge_length_u + 1
+
+                # show edge being added to shortest paths tree
+
+    return d, parents
+
+
+
 def main(): 
      
-    parents = dijkstra(my_graph, 'A')[1]
     
     clock = pygame.time.Clock()
 
@@ -166,15 +268,16 @@ def main():
         
         # dijkstra button
         pygame.draw.rect(screen, yellow, (730, 800, 190, 85), border_radius = 25)
-        drawText("shortest paths", text_font, black, 775, 830)
+        drawText("shortest paths", text_font(12), black, 775, 830)
         leftClick = pygame.mouse.get_pressed()[0] == True
         
         # dijkstra event
+        parents = dijkstra(my_graph, 'A')[1]
         if leftClick and (730 <= mouse_pos[0] <= 920) and (800 <= mouse_pos[1] <= 885):
             drawNodes(my_graph, locations)
             drawShortestPaths(my_graph, parents, locations)
             pygame.draw.rect(screen, (255, 200, 75), (730, 800, 190, 85), border_radius = 25)
-            drawText("shortest paths", text_font, black, 775, 830)
+            drawText("shortest paths", (text_font(12)), black, 775, 830)
             
 
         # create my own graph event
@@ -197,7 +300,7 @@ def main():
         '''
         if pygame.mouse.get_pressed()[0] == True:
             pygame.draw.circle(screen, yellow, mouse_pos, 25)
-            drawText(mouse_posStr, text_font, red, mouse_pos[0], mouse_pos[1])
+            drawText(mouse_posStr, text_font(12), red, mouse_pos[0], mouse_pos[1])
         '''
 
         for event in pygame.event.get():
