@@ -198,23 +198,22 @@ def dijkstra(G, s):
     numEdges[s] = 0
     Q.insert(s, (0.0, 0))
 
+    # create record of actions performed by dijkstras so i can animate
+    record = []
 
     # Initialize all other vertices to infinity
-    for v in vertices:
-        v_x = locations[v][0]
-        v_y = locations[v][1]
-        
+    for v in vertices:        
         if v == s:
-            drawText("0", text_font(50), blue, v_x + 10, v_y + 10)
+            # source is initialized to zero
+            record.append(("init", s))
             continue
         pi[v] = inf
         numEdges[v] = inf
         parents.setdefault(v, None)
         Q.insert(v, (inf, inf))
 
-        #print(v)
-        drawText("infinity", text_font(50), blue, v_x + 10, v_y + 10)
-        # show each edge distance as infinity
+        # node is initialized to infinity
+        record.append(("init", v))
 
 
     # Main loop
@@ -222,20 +221,19 @@ def dijkstra(G, s):
         u, (path_length_u, edge_length_u) = Q.extract_min()  # returns (element, priority)
         d[u] = path_length_u
         if path_length_u == inf:
+            # node is unreachable from source
+            record.append("fail discover", u)
             continue
+        
+        # check if node is undiscovered
+        record.append(("discover", u))
 
         # For each neighbor v of u
         for v, weight_uv in G[u].items():
             # Update the best path length to v using edge (u, v) if it improves pi[v]
 
-            # show if current best dist > new dist
-            v_x = locations[v][0]
-            v_y = locations[v][1]
-            iteration = 1
-            sum = weight_uv + path_length_u
-            check_weight_str = str(path_length_u) + " + " + str(weight_uv) + " = " + str(sum) + " > " + str(pi[v])
-            drawText(check_weight_str, text_font(12), yellow, v_x + 20, v_y + (20 * iteration))
-            iteration += 12
+            # check if current best dist > new dist
+            record.append("check dist", u, v, weight_uv)
 
             if (pi[v], numEdges[v]) > (d[u] + weight_uv, edge_length_u + 1):
                 new_priority = (d[u] + weight_uv, edge_length_u +1)
@@ -244,7 +242,11 @@ def dijkstra(G, s):
                 parents[v] = u
                 numEdges[v] = edge_length_u + 1
 
-                # show edge being added to shortest paths tree
+                # edge being added to shortest paths tree
+                record.append("update", u, v, weight_uv)
+        
+        record.append("finalize", u)
+
 
     return d, parents
 
