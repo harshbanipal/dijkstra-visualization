@@ -18,7 +18,7 @@ green = (0,255,0)
 red = (255,0,0)
 yellow = (255, 255, 0)
 blue = (0, 0, 255)
-
+gray = (150, 150, 150)
 
 # dummy graph and locations for now, will implement adding your own graph later
 my_graph = {
@@ -91,6 +91,7 @@ class Node():
         self.children = children
 
 
+
 def drawNode(name, text_color, node_color, pos, size):
     pygame.draw.circle(screen, node_color, pos, size)
     drawText(name, text_font(12), text_color, pos[0] - 5, pos[1] - 5)
@@ -133,8 +134,8 @@ def drawEdges(graph, locations, edge_color, weights_bool):
 
 
 def drawGraph(graph, locations):
-    drawNodes(graph, locations)
     drawEdges(graph, locations, white, True)
+    drawNodes(graph, locations)
     
 
 def drawText(text, font, color, x, y,):
@@ -222,7 +223,7 @@ def dijkstra(G, s):
         d[u] = path_length_u
         if path_length_u == inf:
             # node is unreachable from source
-            record.append("fail discover", u)
+            record.append(("fail discover", u))
             continue
         
         # check if node is undiscovered
@@ -233,7 +234,7 @@ def dijkstra(G, s):
             # Update the best path length to v using edge (u, v) if it improves pi[v]
 
             # check if current best dist > new dist
-            record.append("check dist", u, v, weight_uv)
+            record.append(("check dist", u, v, pi[v], d[u], weight_uv))
 
             if (pi[v], numEdges[v]) > (d[u] + weight_uv, edge_length_u + 1):
                 new_priority = (d[u] + weight_uv, edge_length_u +1)
@@ -243,18 +244,77 @@ def dijkstra(G, s):
                 numEdges[v] = edge_length_u + 1
 
                 # edge being added to shortest paths tree
-                record.append("update", u, v, weight_uv)
+                record.append(("update", u, v, d[u] + weight_uv))
         
-        record.append("finalize", u)
+        record.append(("finalize", u))
 
 
-    return d, parents
+    return d, parents, record
 
+# parse through record
+def parseRecord(record, index):
+    event = record[index][0]
+    node = record[index][1]
+    node_loc = locations[node]
+    node_x = node_loc[0]
+    node_y = node_loc[1]
 
+    if len(record[index]) > 2:
+        child = record[index][2]
+        child_loc = locations[child]
+        child_x = child_loc[0]
+        child_y = child_loc[1]
+
+        if len(record[index]) > 4:
+            pi = record[index][3]
+            d = record[index][4]
+            edge_len = record[index][5]
+        else:
+            edge_len = record[index][3]
+    
+    #   go until index given-- allows me to create entire state of dijkstras in one call of parseRecord, 
+    #   easy to go back and forth between states
+    for i in range(index + 1):
+        if event == "init": 
+            # display starting path dist by node (either inf or 0)
+            # change color of node to gray
+            drawText("inf", text_font(20), blue, node_x - 10, node_y - 10)
+            drawNode(node, red, gray, node_x, node_y, 25)
+
+        elif event == "discover":
+            # change color of node to white / light yellow
+            drawNode(node, red, yellow, node_x, node_y, 25)
+
+        elif event == "check dist":
+            # draw light yellow line or arrow from node x to y
+            # display above node if the path it has is > than the edge weight plus path to node x
+            drawEdge(yellow, node_loc, child_loc)
+            
+            conditional = str(d) + ' + ' + str(edge_len) + ' < ' + str(pi) + ' ?'
+            drawText(conditional, text_font(20), white, node_x - 40, node_y - 40)
+
+        elif event == "update":
+            # change path dist of node to new path dist
+            # indicate path dist has been updated
+
+            drawText("UPDATE", text_font(15), white, node_x - 45, node_y - 45)
+            updated_dist = str(d + edge_len)
+            drawText(updated_dist, text_font(15), red, node_x - 30, node_y - 30)
+
+        else:
+            # if record index is "finalize"
+            # change color of node to green
+            # write done next to node
+            drawNode(node, red, green, node_x, node_y, 25)
+            drawText("DONE", text_font(10), green, node_x + 25, node_y - 25)
+
+    return
 
 def main(): 
      
-    
+    parents = dijkstra(my_graph, 'A')[1]
+    record = dijkstra(my_graph, 'A')[2]
+    print(str(record))
     clock = pygame.time.Clock()
 
     # game loop
@@ -274,10 +334,9 @@ def main():
         leftClick = pygame.mouse.get_pressed()[0] == True
         
         # dijkstra event
-        parents = dijkstra(my_graph, 'A')[1]
         if leftClick and (730 <= mouse_pos[0] <= 920) and (800 <= mouse_pos[1] <= 885):
-            drawNodes(my_graph, locations)
             drawShortestPaths(my_graph, parents, locations)
+            drawNodes(my_graph, locations)
             pygame.draw.rect(screen, (255, 200, 75), (730, 800, 190, 85), border_radius = 25)
             drawText("shortest paths", (text_font(12)), black, 775, 830)
             
