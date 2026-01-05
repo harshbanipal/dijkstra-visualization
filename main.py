@@ -92,6 +92,54 @@ class Node():
 
 
 
+
+
+# button class
+class Button():
+    def __init__(self, x, y, width, length, color, label, label_size, label_x, label_y, border_rad):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.length = length
+        self.color = color
+        self.label = label
+        self.label_x = label_x
+        self.label_y = label_y
+        self.label_size = label_size
+        self.border_rad = border_rad
+
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.length)
+        self.clicked = False 
+
+    def draw(self, surface):
+        action = False
+
+        pos = pygame.mouse.get_pos()
+        
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == True and self.clicked == False:
+                self.clicked = True
+                action = True
+                print(self.label + " click")
+
+        if pygame.mouse.get_pressed()[0] == False:
+            self.clicked = False
+
+
+        pygame.draw.rect(surface, self.color, self.rect, border_radius = self.border_rad)
+        drawText(self.label, text_font(self.label_size), white, self.label_x, self.label_y)
+
+        return action
+
+# create button instances
+exit_button = Button(800, 100, 150, 50, gray, "exit", 50, 825, 95, 15)
+prev_button = Button(300, 800, 100, 75, gray, "prev", 20, 330, 820, 10)
+next_button = Button(600, 800, 100, 75, gray, "next", 20, 630, 820, 10)
+run_button = Button(450, 800, 100, 75, gray, "run", 20, 480, 820, 10)
+
+
+
+
 def drawNode(name, text_color, node_color, pos, size):
     pygame.draw.circle(screen, node_color, pos, size)
     drawText(name, text_font(12), text_color, pos[0] - 5, pos[1] - 5)
@@ -253,37 +301,45 @@ def dijkstra(G, s):
 
 # parse through record
 def parseRecord(record, index):
-    event = record[index][0]
-    node = record[index][1]
-    node_loc = locations[node]
-    node_x = node_loc[0]
-    node_y = node_loc[1]
-
-    if len(record[index]) > 2:
-        child = record[index][2]
-        child_loc = locations[child]
-        child_x = child_loc[0]
-        child_y = child_loc[1]
-
-        if len(record[index]) > 4:
-            pi = record[index][3]
-            d = record[index][4]
-            edge_len = record[index][5]
-        else:
-            edge_len = record[index][3]
-    
+   
     #   go until index given-- allows me to create entire state of dijkstras in one call of parseRecord, 
     #   easy to go back and forth between states
     for i in range(index + 1):
+        
+
+        # init, discover, and finalize events
+        event = record[i][0]
+        node = record[i][1]
+        node_loc = locations[node]
+        node_x = node_loc[0]
+        node_y = node_loc[1]
+
+        # other events
+        if len(record[i]) > 2:
+            child = record[i][2]
+            child_loc = locations[child]
+            child_x = child_loc[0]
+            child_y = child_loc[1]
+
+            # check dist
+            if event == "check dist":
+                pi = record[i][3]
+                d = record[i][4]
+                edge_len = record[i][5]
+            # update
+            else:
+                path_len = record[i][3]
+
+
         if event == "init": 
             # display starting path dist by node (either inf or 0)
             # change color of node to gray
             drawText("inf", text_font(20), blue, node_x - 10, node_y - 10)
-            drawNode(node, red, gray, node_x, node_y, 25)
+            drawNode(node, red, gray, (node_x, node_y), 25)
 
         elif event == "discover":
             # change color of node to white / light yellow
-            drawNode(node, red, yellow, node_x, node_y, 25)
+            drawNode(node, red, yellow, (node_x, node_y), 25)
 
         elif event == "check dist":
             # draw light yellow line or arrow from node x to y
@@ -298,14 +354,14 @@ def parseRecord(record, index):
             # indicate path dist has been updated
 
             drawText("UPDATE", text_font(15), white, node_x - 45, node_y - 45)
-            updated_dist = str(d + edge_len)
+            updated_dist = str(path_len)
             drawText(updated_dist, text_font(15), red, node_x - 30, node_y - 30)
 
         else:
             # if record index is "finalize"
             # change color of node to green
             # write done next to node
-            drawNode(node, red, green, node_x, node_y, 25)
+            drawNode(node, red, green, (node_x, node_y), 25)
             drawText("DONE", text_font(10), green, node_x + 25, node_y - 25)
 
     return
@@ -317,6 +373,9 @@ def main():
     print(str(record))
     clock = pygame.time.Clock()
 
+    index = -1
+    is_running = False
+
     # game loop
     running = True  
     while running:
@@ -324,25 +383,49 @@ def main():
         screen.fill(black)
         drawGraph(my_graph, locations)     # initial event for now, later initial event will be adding graph
 
+
+        if exit_button.draw(screen):
+            running = False
+
+        if run_button.draw(screen):
+            is_running = True
+            index = 0
+            print(index)
+
+        if prev_button.draw(screen):
+            index = max(index - 1, -1)
+            
+        if next_button.draw(screen):
+            index = min(index + 1, len(record) - 1)
+
+        if index >= 0:
+            parseRecord(record, index)
+            
+
+
         # creating UI
         mouse_pos = pygame.mouse.get_pos()
         mouse_posStr = str(mouse_pos)
         
+        '''
         # dijkstra button
         pygame.draw.rect(screen, yellow, (730, 800, 190, 85), border_radius = 25)
         drawText("shortest paths", text_font(12), black, 775, 830)
         leftClick = pygame.mouse.get_pressed()[0] == True
-        
+        '''
+
+
+        '''
         # dijkstra event
         if leftClick and (730 <= mouse_pos[0] <= 920) and (800 <= mouse_pos[1] <= 885):
             drawShortestPaths(my_graph, parents, locations)
             drawNodes(my_graph, locations)
             pygame.draw.rect(screen, (255, 200, 75), (730, 800, 190, 85), border_radius = 25)
             drawText("shortest paths", (text_font(12)), black, 775, 830)
-            
+        '''
 
         # create my own graph event
-            '''
+        '''
             in this event, 
             1)  let user drop nodes anywhere on screen
                     -   record location of node and give the node key '0' and add 1 to key per node added
@@ -357,7 +440,8 @@ def main():
             4)  user can click on an edge and edit the edge weight
                     -   check if user clicks on rect, and then take in user input for weight-- check nodes between edges
                         and update hashtable
-            '''
+        '''
+
         '''
         if pygame.mouse.get_pressed()[0] == True:
             pygame.draw.circle(screen, yellow, mouse_pos, 25)
@@ -366,7 +450,8 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                running = False   
+
 
         pygame.display.flip()
         
