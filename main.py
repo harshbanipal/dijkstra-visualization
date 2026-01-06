@@ -19,6 +19,7 @@ red = (255,0,0)
 yellow = (255, 255, 0)
 blue = (0, 0, 255)
 gray = (150, 150, 150)
+orange = (255, 172, 121)
 
 # dummy graph and locations for now, will implement adding your own graph later
 my_graph = {
@@ -300,8 +301,9 @@ def dijkstra(G, s):
     return d, parents, record
 
 # parse through record
-def parseRecord(record, index):
-   
+def parseRecord(record, index, keep):
+    parents = dijkstra(my_graph, 'A')[1]
+
     #   go until index given-- allows me to create entire state of dijkstras in one call of parseRecord, 
     #   easy to go back and forth between states
     for i in range(index + 1):
@@ -334,8 +336,10 @@ def parseRecord(record, index):
         if event == "init": 
             # display starting path dist by node (either inf or 0)
             # change color of node to gray
-            drawText("inf", text_font(20), blue, node_x - 10, node_y - 10)
             drawNode(node, red, gray, (node_x, node_y), 25)
+
+            if node == parents[0]:
+                drawText("inf", text_font(15), blue, node_x - 25, node_y - 40)
 
         elif event == "discover":
             # change color of node to white / light yellow
@@ -346,16 +350,23 @@ def parseRecord(record, index):
             # display above node if the path it has is > than the edge weight plus path to node x
             drawEdge(yellow, node_loc, child_loc)
             
-            conditional = str(d) + ' + ' + str(edge_len) + ' < ' + str(pi) + ' ?'
-            drawText(conditional, text_font(20), white, node_x - 40, node_y - 40)
+            if keep:
+                conditional = str(d) + ' + ' + str(edge_len) + ' < ' + str(pi) + ' ?'
+                drawText(conditional, text_font(20), white, child_x - 50, child_y - 50)
+                keep = False
+            #print("check dist printed at index " + str(index))
 
         elif event == "update":
             # change path dist of node to new path dist
             # indicate path dist has been updated
-
-            drawText("UPDATE", text_font(15), white, node_x - 45, node_y - 45)
+            
+            if keep:
+                drawText("UPDATE", text_font(15), white, child_x - 25, child_y - 55)
+                keep = False
+        
+            #print("update printed at index " + str(index))
             updated_dist = str(path_len)
-            drawText(updated_dist, text_font(15), red, node_x - 30, node_y - 30)
+            drawText(updated_dist, text_font(15), orange, child_x - 25, child_y - 40)
 
         else:
             # if record index is "finalize"
@@ -363,18 +374,22 @@ def parseRecord(record, index):
             # write done next to node
             drawNode(node, red, green, (node_x, node_y), 25)
             drawText("DONE", text_font(10), green, node_x + 25, node_y - 25)
+        
 
-    return
+    return keep
 
 def main(): 
      
     parents = dijkstra(my_graph, 'A')[1]
+    print(parents)
     record = dijkstra(my_graph, 'A')[2]
     print(str(record))
     clock = pygame.time.Clock()
 
     index = -1
-    is_running = False
+    dijkstra_running = False
+    keep = True
+    
 
     # game loop
     running = True  
@@ -388,18 +403,23 @@ def main():
             running = False
 
         if run_button.draw(screen):
-            is_running = True
+            dijkstra_running = True
             index = 0
             print(index)
 
         if prev_button.draw(screen):
             index = max(index - 1, -1)
+            print(keep)
             
         if next_button.draw(screen):
             index = min(index + 1, len(record) - 1)
+            print(keep)
+            #if keep == False: 
+                #keep = True
 
         if index >= 0:
-            parseRecord(record, index)
+            parseRecord(record, index, keep)
+
             
 
 
