@@ -74,15 +74,37 @@ def text_font(size):
 
 # node class
 class Node():
-    def __init__(self, name, x, y, path_length):
+    def __init__(self, name, x, y, color):
         self.name = name
         self.x = x
         self.y = y
-        self.path_length = path_length
+        self.color = color
+        
+        
+        self.location = (x,y)
+        self.children = {}
+        self.clicked = False
 
-        self.children = my_graph[self.name]
-    def initPath(self):
-        self.path_length = -999
+    def draw(self, surface):
+        action = False
+
+        pos = pygame.mouse.get_pos()
+
+        self.rect = pygame.draw.circle(surface, self.color, self.location, 25)
+
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == True and self.clicked == False:
+                self.clicked = True
+                action = True
+                print("node " + self.name + " clicked")
+        
+        if pygame.mouse.get_pressed()[0] == False:
+            self.clicked = False
+
+        pygame.draw.circle(surface, self.color, self.location, 25)
+        drawText(self.name, text_font(12), red, self.x - 5, self.y - 5)
+
+        return action
 
 
 
@@ -355,7 +377,7 @@ def parseRecord(record, index):
             if i == index: 
                 drawEdge(yellow, node_loc, child_loc)
                 conditional = str(d) + ' + ' + str(edge_len) + ' < ' + str(pi) + ' ?'
-                drawText(conditional, text_font(20), white, child_x - 50, child_y - 50)
+                drawText(conditional, text_font(20), white, child_x - 50, child_y + 25)
 
 
         elif event == "update":
@@ -410,54 +432,68 @@ def parseRecord(record, index):
     return
 
 def main(): 
-     
+    
+    user_graph = {}
+    user_locations = {}
+    node_objs = set()
+    x = 0
+
+    '''
     parents = dijkstra(my_graph, 'A')[1]
     print(parents)
     record = dijkstra(my_graph, 'A')[2]
     print(str(record))
-
+    '''
     clock = pygame.time.Clock()
 
-    index = -1
     dijkstra_running = False
-    #keep = True
-    
+    index = -1
+
 
     # game loop
     running = True  
     while running:
 
         screen.fill(black)
-        drawGraph(my_graph, locations)     # initial event for now, later initial event will be adding graph
+        #drawGraph(my_graph, locations)     # initial event for now, later initial event will be adding graph
 
-
+        mouse_pos = pygame.mouse.get_pos()
+        
         if exit_button.draw(screen):
             running = False
 
+ 
+        for node in user_locations:
+            new_node = Node(str(node), user_locations[node][0], user_locations[node][1], white)
+            #new_node.draw(screen)
+            node_objs.add(new_node)
+
+        for node_obj in node_objs: 
+            if node_obj.draw(screen):
+                node_obj.color = gray
+
+
+        #print(user_locations)
+
+
+        '''
+        run through dijkstra on graph
         if run_button.draw(screen):
             dijkstra_running = True
             index = 0
-            print(index)
 
         if prev_button.draw(screen):
             index = max(index - 1, -1)
-            #print(keep)
             
         if next_button.draw(screen):
             index = min(index + 1, len(record) - 1)
-            #print(keep)
-            #if keep == False: 
-                #keep = True
-
+           
         if index >= 0:
             parseRecord(record, index)
 
-            
+        '''
 
 
-        # creating UI
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_posStr = str(mouse_pos)
         
         '''
         # dijkstra button
@@ -502,7 +538,15 @@ def main():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False   
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # check if user is clicking on node (don't want to draw another node)
+                if event.button == 1:
+                    # draw node, add to user_locations and user_graph, increment index
+                    user_locations[x] = mouse_pos
+                    user_graph[x] = {}
+                    x += 1
+                    print("created node " + str(x))
 
 
         pygame.display.flip()
