@@ -58,6 +58,14 @@ locations = {
 }
 
 
+# get source
+def getSource(parents):
+    for parent in parents:
+        if parents[parent] == None:
+            source = parent
+    return source
+
+
 # text font
 def text_font(size):
     font = pygame.font.SysFont('Arial', size)
@@ -66,32 +74,15 @@ def text_font(size):
 
 # node class
 class Node():
-    # constructor
-    def __init__(self, x, y, radius, color, children):
+    def __init__(self, name, x, y, path_length):
+        self.name = name
         self.x = x
         self.y = y
-        self.radius = radius
-        self.color = color
-        self.children = children
+        self.path_length = path_length
 
-    # getters
-    def getLoc(self):
-        return (self.x, self.y)
-    
-    def getColor(self):
-        return self.color
-    
-    def getRadius(self):
-        return self.radius
-    
-    def getChildren(self):
-        return self.children
-    
-    # setters
-    def setChildren(self, children):
-        self.children = children
-
-
+        self.children = my_graph[self.name]
+    def initPath(self):
+        self.path_length = -999
 
 
 
@@ -301,14 +292,16 @@ def dijkstra(G, s):
     return d, parents, record
 
 # parse through record
-def parseRecord(record, index, keep):
+def parseRecord(record, index):
     parents = dijkstra(my_graph, 'A')[1]
+    source = getSource(parents)
+
+    path_lengths = {}
+    revealed = set()   
 
     #   go until index given-- allows me to create entire state of dijkstras in one call of parseRecord, 
     #   easy to go back and forth between states
     for i in range(index + 1):
-        
-
         # init, discover, and finalize events
         event = record[i][0]
         node = record[i][1]
@@ -336,10 +329,20 @@ def parseRecord(record, index, keep):
         if event == "init": 
             # display starting path dist by node (either inf or 0)
             # change color of node to gray
+
             drawNode(node, red, gray, (node_x, node_y), 25)
 
-            if node == parents[0]:
-                drawText("inf", text_font(15), blue, node_x - 25, node_y - 40)
+            if node == source:
+                path_lengths[node] = 0
+                #drawText("0", text_font(15), blue, node_x - 25, node_y - 40)
+
+                
+            else:
+                path_lengths[node] = inf
+                #drawText("inf", text_font(15), blue, node_x - 25, node_y - 40)
+            
+            revealed.add(node)
+
 
         elif event == "discover":
             # change color of node to white / light yellow
@@ -348,35 +351,63 @@ def parseRecord(record, index, keep):
         elif event == "check dist":
             # draw light yellow line or arrow from node x to y
             # display above node if the path it has is > than the edge weight plus path to node x
-            drawEdge(yellow, node_loc, child_loc)
             
-            if keep:
+            if i == index: 
+                drawEdge(yellow, node_loc, child_loc)
                 conditional = str(d) + ' + ' + str(edge_len) + ' < ' + str(pi) + ' ?'
                 drawText(conditional, text_font(20), white, child_x - 50, child_y - 50)
-                keep = False
-            #print("check dist printed at index " + str(index))
+
 
         elif event == "update":
             # change path dist of node to new path dist
             # indicate path dist has been updated
-            
-            if keep:
+            path_lengths[child] = path_len
+
+            if i == index:
                 drawText("UPDATE", text_font(15), white, child_x - 25, child_y - 55)
-                keep = False
-        
+
+
             #print("update printed at index " + str(index))
             updated_dist = str(path_len)
-            drawText(updated_dist, text_font(15), orange, child_x - 25, child_y - 40)
+            #drawText(updated_dist, text_font(15), orange, child_x - 25, child_y - 40)
+            revealed.add(child)
 
         else:
             # if record index is "finalize"
-            # change color of node to green
+            # change color of node to green, add edge to shortest dist tree
             # write done next to node
-            drawNode(node, red, green, (node_x, node_y), 25)
-            drawText("DONE", text_font(10), green, node_x + 25, node_y - 25)
-        
+            if node != source:
+                for parent in parents[node]:
+                    parent_loc = locations[parent]
+                    drawEdge(green, node_loc, parent_loc)
 
-    return keep
+            drawNode(node, red, green, (node_x, node_y), 25)
+
+            drawText("DONE", text_font(10), green, node_x + 25, node_y - 25)
+
+            revealed.add(node)
+    
+
+    # draw only path distances that are revealed after parsing record indicies
+    for node in revealed:
+        dist = path_lengths[node]
+        if dist == inf:
+            text = "inf"
+            color = blue
+        elif dist == 0:
+            text = "0"
+            color = yellow
+        else:
+            text = str(dist)
+            color = orange
+        
+        drawText(text, text_font(15), color, locations[node][0] - 25, locations[node][1] - 40)    
+
+
+    print(path_lengths)
+    print(revealed)
+
+    return
 
 def main(): 
      
@@ -384,11 +415,12 @@ def main():
     print(parents)
     record = dijkstra(my_graph, 'A')[2]
     print(str(record))
+
     clock = pygame.time.Clock()
 
     index = -1
     dijkstra_running = False
-    keep = True
+    #keep = True
     
 
     # game loop
@@ -409,16 +441,16 @@ def main():
 
         if prev_button.draw(screen):
             index = max(index - 1, -1)
-            print(keep)
+            #print(keep)
             
         if next_button.draw(screen):
             index = min(index + 1, len(record) - 1)
-            print(keep)
+            #print(keep)
             #if keep == False: 
                 #keep = True
 
         if index >= 0:
-            parseRecord(record, index, keep)
+            parseRecord(record, index)
 
             
 
