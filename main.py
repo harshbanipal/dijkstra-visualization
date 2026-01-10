@@ -20,6 +20,8 @@ yellow = (255, 255, 0)
 blue = (0, 0, 255)
 gray = (150, 150, 150)
 orange = (255, 172, 121)
+darkred = (150, 0, 0)
+cerulean = (100, 155, 200)
 
 # dummy graph and locations for now, will implement adding your own graph later
 my_graph = {
@@ -83,28 +85,19 @@ class Node():
         
         self.location = (x,y)
         self.children = {}
-        self.clicked = False
+
+        self.leftclicked = False
+        self.rightclicked = False
+        self.selected = False 
 
     def draw(self, surface):
-        action = False
+        drawcolor = self.color
+        if self.selected:
+            drawcolor = gray
 
-        pos = pygame.mouse.get_pos()
-
-        self.rect = pygame.draw.circle(surface, self.color, self.location, 25)
-
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == True and self.clicked == False:
-                self.clicked = True
-                action = True
-                print("node " + self.name + " clicked")
-        
-        if pygame.mouse.get_pressed()[0] == False:
-            self.clicked = False
-
-        pygame.draw.circle(surface, self.color, self.location, 25)
+        self.rect = pygame.draw.circle(surface, drawcolor, self.location, 25)
         drawText(self.name, text_font(12), red, self.x - 5, self.y - 5)
 
-        return action
 
 
 
@@ -123,7 +116,7 @@ class Button():
         self.border_rad = border_rad
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.length)
-        self.clicked = False 
+        self.clicked = False
 
     def draw(self, surface):
         action = False
@@ -139,17 +132,25 @@ class Button():
         if pygame.mouse.get_pressed()[0] == False:
             self.clicked = False
 
-
         pygame.draw.rect(surface, self.color, self.rect, border_radius = self.border_rad)
         drawText(self.label, text_font(self.label_size), white, self.label_x, self.label_y)
 
         return action
 
 # create button instances
-exit_button = Button(800, 100, 150, 50, gray, "exit", 50, 825, 95, 15)
+button_objs = set()
+
+exit_button = Button(800, 100, 150, 50, darkred, "exit", 30, 840, 105, 15)
 prev_button = Button(300, 800, 100, 75, gray, "prev", 20, 330, 820, 10)
 next_button = Button(600, 800, 100, 75, gray, "next", 20, 630, 820, 10)
 run_button = Button(450, 800, 100, 75, gray, "run", 20, 480, 820, 10)
+clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 165, 15)
+
+button_objs.add(exit_button)
+button_objs.add(prev_button)
+button_objs.add(next_button)
+button_objs.add(run_button)
+button_objs.add(clear_button)
 
 
 
@@ -459,29 +460,30 @@ def main():
 
         mouse_pos = pygame.mouse.get_pos()
         
+
+        for node_obj in node_objs: 
+            node_obj.draw(screen)
+
+
+
+        if clear_button.draw(screen):
+            screen.fill(black)
+            user_locations = {}
+            user_graph = {}
+            node_objs = set()
+            x = 0
+
+
         if exit_button.draw(screen):
             running = False
 
- 
-        for node in user_locations:
-            new_node = Node(str(node), user_locations[node][0], user_locations[node][1], white)
-            #new_node.draw(screen)
-            node_objs.add(new_node)
 
-        for node_obj in node_objs: 
-            if node_obj.draw(screen):
-                node_obj.color = gray
-
-
-        #print(user_locations)
-
-
-        '''
-        run through dijkstra on graph
+        #run through dijkstra on graph
         if run_button.draw(screen):
             dijkstra_running = True
             index = 0
 
+        '''
         if prev_button.draw(screen):
             index = max(index - 1, -1)
             
@@ -493,60 +495,46 @@ def main():
 
         '''
 
-
-        
-        '''
-        # dijkstra button
-        pygame.draw.rect(screen, yellow, (730, 800, 190, 85), border_radius = 25)
-        drawText("shortest paths", text_font(12), black, 775, 830)
-        leftClick = pygame.mouse.get_pressed()[0] == True
-        '''
-
-
-        '''
-        # dijkstra event
-        if leftClick and (730 <= mouse_pos[0] <= 920) and (800 <= mouse_pos[1] <= 885):
-            drawShortestPaths(my_graph, parents, locations)
-            drawNodes(my_graph, locations)
-            pygame.draw.rect(screen, (255, 200, 75), (730, 800, 190, 85), border_radius = 25)
-            drawText("shortest paths", (text_font(12)), black, 775, 830)
-        '''
-
-        # create my own graph event
-        '''
-            in this event, 
-            1)  let user drop nodes anywhere on screen
-                    -   record location of node and give the node key '0' and add 1 to key per node added
-                    -   create hashtable of nodes with empty values
-            2)  when two nodes are clicked on, create an edge between those two nodes
-                    -   give default weight of 1 to edge and add relationship to hash table: n1: {n2: 1}, n2: {n1: 1}
-                    -   record edge parents?
-            3)  maybe when user clicks on any sequence of nodes, each click is added to a queue and then create edges
-                in the order the user clicked the nodes in
-                    -   give default weight of 1, add relationships to hashtable?
-                            pop node from queue, peek at next node and update hash table
-            4)  user can click on an edge and edit the edge weight
-                    -   check if user clicks on rect, and then take in user input for weight-- check nodes between edges
-                        and update hashtable
-        '''
-
-        '''
-        if pygame.mouse.get_pressed()[0] == True:
-            pygame.draw.circle(screen, yellow, mouse_pos, 25)
-            drawText(mouse_posStr, text_font(12), red, mouse_pos[0], mouse_pos[1])
-        '''
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # check if user is clicking on node (don't want to draw another node)
+                # create nodes upon left click
                 if event.button == 1:
-                    # draw node, add to user_locations and user_graph, increment index
-                    user_locations[x] = mouse_pos
-                    user_graph[x] = {}
-                    x += 1
-                    print("created node " + str(x))
+                    cursor_in_obj = False
+                    # check if cursor is in any nodes or other objects (exit button, run button, etc.)
+                    for node in node_objs:
+                        if node.rect.collidepoint(mouse_pos):
+                            cursor_in_obj = True
+                            print("node " + node.name + " clicked")
+                    for button in button_objs:
+                        if button.rect.collidepoint(mouse_pos):
+                            cursor_in_obj = True
+                    
+                    # create node if cursor is not in any object
+                    if cursor_in_obj == False:
+                        user_locations[x] = mouse_pos
+                        user_graph[x] = {}
+                        node_objs.add(Node(str(x), mouse_pos[0], mouse_pos[1], white))
+                        print("created node " + str(x))
+                        x += 1
+
+                # selection
+                if event.button == 3: 
+
+                    for node in node_objs:
+                        if node.rect.collidepoint(mouse_pos):
+                            if node.selected == True:
+                                node.selected = False
+                                print("node " + node.name + " deselected")
+                            else: 
+                                node.selected = True
+                                print("node " + node.name + " selected")
+                            
+
+                    
+
+
 
 
         pygame.display.flip()
