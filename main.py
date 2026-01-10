@@ -98,6 +98,10 @@ class Node():
         self.rect = pygame.draw.circle(surface, drawcolor, self.location, 25)
         drawText(self.name, text_font(12), red, self.x - 5, self.y - 5)
 
+    def getrect(self, surface):
+        self.rect = pygame.draw.circle(surface, self.color, self.location, 25)
+        return self.rect
+
 
 
 
@@ -144,7 +148,7 @@ exit_button = Button(800, 100, 150, 50, darkred, "exit", 30, 840, 105, 15)
 prev_button = Button(300, 800, 100, 75, gray, "prev", 20, 330, 820, 10)
 next_button = Button(600, 800, 100, 75, gray, "next", 20, 630, 820, 10)
 run_button = Button(450, 800, 100, 75, gray, "run", 20, 480, 820, 10)
-clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 165, 15)
+clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 160, 15)
 
 button_objs.add(exit_button)
 button_objs.add(prev_button)
@@ -439,6 +443,10 @@ def main():
     node_objs = set()
     x = 0
 
+    # for dragging nodes
+    node_list = []
+    active_node = None
+
     '''
     parents = dijkstra(my_graph, 'A')[1]
     print(parents)
@@ -468,9 +476,11 @@ def main():
 
         if clear_button.draw(screen):
             screen.fill(black)
+            clear_button.draw(screen)
             user_locations = {}
             user_graph = {}
             node_objs = set()
+            node_list = []
             x = 0
 
 
@@ -480,6 +490,7 @@ def main():
 
         #run through dijkstra on graph
         if run_button.draw(screen):
+            print(node_list)
             dijkstra_running = True
             index = 0
 
@@ -515,13 +526,21 @@ def main():
                     if cursor_in_obj == False:
                         user_locations[x] = mouse_pos
                         user_graph[x] = {}
-                        node_objs.add(Node(str(x), mouse_pos[0], mouse_pos[1], white))
+                        new_node = Node(str(x), mouse_pos[0], mouse_pos[1], white)
+                        node_objs.add(new_node)
                         print("created node " + str(x))
+                        node_list.append(new_node.getrect(screen))
                         x += 1
 
-                # selection
-                if event.button == 3: 
+                    # setting active node for dragging
+                    for num, node in enumerate(node_list):
+                        if node.collidepoint(mouse_pos):
+                            active_node = num
+                            print("length of node_list: " + str(len(node_list)))
+                            print("active node index: " + str(active_node))
 
+                # node selection with right click
+                if event.button == 3: 
                     for node in node_objs:
                         if node.rect.collidepoint(mouse_pos):
                             if node.selected == True:
@@ -530,7 +549,16 @@ def main():
                             else: 
                                 node.selected = True
                                 print("node " + node.name + " selected")
-                            
+            
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1: 
+                    active_node = None
+        
+            if event.type == pygame.MOUSEMOTION:
+                if active_node != None:
+                    node_list[active_node].move_ip(event.rel)
+            
+
 
                     
 
