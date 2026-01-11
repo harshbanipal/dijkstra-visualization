@@ -24,42 +24,7 @@ gray = (150, 150, 150)
 orange = (255, 172, 121)
 darkred = (150, 0, 0)
 cerulean = (100, 155, 200)
-
-# dummy graph and locations for now, will implement adding your own graph later
-my_graph = {
-    'A': {
-        'B' : 1,
-        'C' : 5, 
-        'D' : 3
-        },
-    'B': {
-        'A' : 1, 
-        'C' : 2
-        },
-    'C': {
-        'A' : 5, 
-        'B' : 2, 
-        'D' : 1, 
-        'E' : 7
-        },
-    'D': {
-        'A' : 3, 
-        'C' : 1, 
-        'E' : 4
-        },
-    'E': {
-        'D' : 4, 
-        'C' : 7
-        }
-} 
-
-locations = {
-    'A' : (275, 350),
-    'B' : (625, 250),
-    'C' : (625, 450),
-    'D' : (275, 550),
-    'E' : (625, 650)
-}
+gold = (240, 200, 50)
 
 
 # get source
@@ -91,11 +56,14 @@ class Node():
         self.leftclicked = False
         self.rightclicked = False
         self.selected = False 
+        self.source = False
 
     def draw(self, surface):
         drawcolor = self.color
         if self.selected:
             drawcolor = gray
+        elif self.source:
+            drawcolor = gold
 
         pygame.draw.circle(surface, drawcolor, self.location, 25)
         drawText(str(self.key), text_font(12), red, self.x - 5, self.y - 5)
@@ -113,8 +81,8 @@ class Edge():
         self.second_parent = second_parent
 
     def draw(self, surface):
-        node_pos = user_locations[self.first_parent]
-        child_pos = user_locations[self.second_parent]
+        node_pos = (self.first_parent.x, self.first_parent.y)
+        child_pos = (self.second_parent.x, self.second_parent.y)
 
         # draw line
         pygame.draw.line(surface, white, node_pos, child_pos)
@@ -203,6 +171,7 @@ run_button = Button(450, 800, 100, 75, gray, "run", 20, 480, 820, 10)
 clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 160, 15)
 draw_tool = Button(10, 275, 30, 30, gray, "draw", 15, 10, 305, 5)
 draw_tool.toggle = True
+source_select_tool = Button(10, 335, 30, 30, gray, "source select", 15, 10, 365, 5)
 
 button_objs.add(exit_button)
 button_objs.add(prev_button)
@@ -210,10 +179,11 @@ button_objs.add(next_button)
 button_objs.add(run_button)
 button_objs.add(clear_button)
 button_objs.add(draw_tool)
+button_objs.add(source_select_tool)
 
 
 
-
+# functions used in parseRecord
 def drawNode(name, text_color, node_color, pos, size):
     pygame.draw.circle(screen, node_color, pos, size)
     drawText(name, text_font(12), text_color, pos[0] - 5, pos[1] - 5)
@@ -265,7 +235,6 @@ def drawText(text, font, color, x, y,):
     screen.blit(img, (x,y))
 
 
-# draw resulting shortest paths graph
 def drawShortestPaths(graph, parents, locations):
     
     for node in parents:
@@ -374,10 +343,7 @@ def dijkstra(G, s):
     return d, parents, record
 
 # parse through record
-def parseRecord(record, index):
-    parents = dijkstra(my_graph, 'A')[1]
-    source = getSource(parents)
-
+def parseRecord(record, index, graph, source, locations, parents):
     path_lengths = {}
     revealed = set()   
 
@@ -412,7 +378,7 @@ def parseRecord(record, index):
             # display starting path dist by node (either inf or 0)
             # change color of node to gray
 
-            drawNode(node, red, gray, (node_x, node_y), 25)
+            drawNode(str(node), red, gray, (node_x, node_y), 25)
 
             if node == source:
                 path_lengths[node] = 0
@@ -428,7 +394,7 @@ def parseRecord(record, index):
 
         elif event == "discover":
             # change color of node to white / light yellow
-            drawNode(node, red, yellow, (node_x, node_y), 25)
+            drawNode(str(node), red, yellow, (node_x, node_y), 25)
 
         elif event == "check dist":
             # draw light yellow line or arrow from node x to y
@@ -459,11 +425,10 @@ def parseRecord(record, index):
             # change color of node to green, add edge to shortest dist tree
             # write done next to node
             if node != source:
-                for parent in parents[node]:
-                    parent_loc = locations[parent]
-                    drawEdge(green, node_loc, parent_loc)
+                parent_loc = locations[parents[node]]
+                drawEdge(green, node_loc, parent_loc)
 
-            drawNode(node, red, green, (node_x, node_y), 25)
+            drawNode(str(node), red, green, (node_x, node_y), 25)
 
             drawText("DONE", text_font(10), green, node_x + 25, node_y - 25)
 
@@ -486,18 +451,19 @@ def parseRecord(record, index):
         drawText(text, text_font(15), color, locations[node][0] - 25, locations[node][1] - 40)    
 
 
-    print(path_lengths)
-    print(revealed)
+    #print(path_lengths)
+    #print(revealed)
 
     return
 
 def main(): 
     
+    # init graph, locations, node_objs, x (counter for node index)
     user_graph = {}
     user_locations = {}
     node_objs = set()
     x = 0
-
+    
     # for dragging nodes
     node_list = []
     active_node = None
@@ -509,12 +475,11 @@ def main():
     selectionq = deque()
     edges = set()
 
-    '''
-    parents = dijkstra(my_graph, 'A')[1]
-    print(parents)
-    record = dijkstra(my_graph, 'A')[2]
-    print(str(record))
-    '''
+    # can only select source when source_select is toggled
+    source_select = False
+    source = None
+
+
     clock = pygame.time.Clock()
 
     dijkstra_running = False
@@ -534,9 +499,11 @@ def main():
         for edge in edges:
             edge.draw(screen)
         
-        for node_obj in node_objs: 
+        for node_obj in node_objs:
             node_obj.draw(screen)
 
+        if source_select_tool.draw(screen):
+            source_select = True
 
 
         if clear_button.draw(screen):
@@ -546,6 +513,12 @@ def main():
             user_graph = {}
             node_objs = set()
             node_list = []
+            selectionq.clear()
+            edges = set()
+            source = None
+            parents = None
+            record = None
+            index = -1
             x = 0
 
 
@@ -556,22 +529,30 @@ def main():
             draw = not draw
 
         #run through dijkstra on graph
-        if run_button.draw(screen):
-            print(node_list)
-            dijkstra_running = True
-            index = 0
+        if x > 0:
+            if run_button.draw(screen):
+                parents = dijkstra(user_graph, source.key)[1]
 
-        '''
-        if prev_button.draw(screen):
-            index = max(index - 1, -1)
+                print()
+                print(" parents : " + str(parents))
+                record = dijkstra(user_graph, source.key)[2]
+                print("record: " + str(record))
+                dijkstra_running = True
+                index = 0
             
-        if next_button.draw(screen):
-            index = min(index + 1, len(record) - 1)
-           
-        if index >= 0:
-            parseRecord(record, index)
+            if dijkstra_running:
+                if prev_button.draw(screen):
+                    index = max(index - 1, -1)
+                    
+                if next_button.draw(screen):
+                    index = min(index + 1, len(record) - 1)
+                
+                if index >= 0:
+                    parseRecord(record, index, user_graph, source.key, user_locations, parents)
+                
+            
 
-        '''
+        
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -585,6 +566,15 @@ def main():
                         if node.rect.collidepoint(mouse_pos):
                             cursor_in_obj = True
                             print("node " + str(node.key) + " clicked")
+
+                            if source_select == True and draw == False:
+                                # check if any other nodes are already sources
+
+
+                                node.source = True
+                                source_select = False
+                                source = node
+
                     for button in button_objs:
                         if button.rect.collidepoint(mouse_pos):
                             cursor_in_obj = True
@@ -595,6 +585,7 @@ def main():
                         user_graph[x] = {}
                         new_node = Node(x, mouse_pos[0], mouse_pos[1], white)
                         node_objs.add(new_node)
+
                         print("created node " + str(x))
                         node_list.append(new_node)
                         x += 1
@@ -602,9 +593,12 @@ def main():
                     # setting active node for dragging
                     for num, node in enumerate(node_list):
                         rect = node.getrect(screen)
-                        if rect.collidepoint(mouse_pos) and draw:
+                        if rect.collidepoint(mouse_pos) and draw == False:
                             active_node = num
                             print("active node: " + str(active_node))
+
+                    
+
 
                 # node selection with right click
                 if event.button == 3: 
@@ -615,13 +609,13 @@ def main():
                                 print("node " + str(node.key) + " deselected")
                             else: 
                                 node.selected = True
-                                selectionq.append(node.key)
+                                selectionq.append(node)
                                 print("node " + str(node.key) + " selected")
             
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1: 
                     active_node = None
-                    print("no active node")
+                    #print("no active node")
         
             if event.type == pygame.MOUSEMOTION:
                 if active_node != None:
@@ -633,6 +627,8 @@ def main():
                     new_node.x = mouse_pos[0]
                     new_node.y = mouse_pos[1]
                     new_node.location = mouse_pos
+                    user_locations[new_node.key] = mouse_pos
+                    
             
             # create edges from selected nodes
             if event.type == pygame.KEYDOWN:
@@ -641,11 +637,15 @@ def main():
                         a = selectionq.popleft()        # pop first node in q
                         if len(selectionq) > 0: 
                             b = selectionq[0]               # peek next node
-                            user_graph[a] = b               # update user_graph with edge
-                            user_graph[b] = a
+                            user_graph[a.key][b.key] = 1             # update user_graph with edge
+                            user_graph[b.key][a.key] = 1
                             new_edge = Edge(1, a, b)        # create new edge object and add to edge set
-                            edges.add(new_edge)             
-                            print("edge from " + str(a) + " to " + str(b) + " created")
+                            edges.add(new_edge)         
+                            print("edge from " + str(a.key) + " to " + str(b.key) + " created")
+
+                            # unselect all nodes
+                            for node in node_objs:
+                                node.selected = False
                     
         
     
