@@ -3,6 +3,8 @@ import pygame
 from math import inf
 from priorityQue import MinPriorityQueue
 
+from collections import deque
+
 pygame.init()  
 
 
@@ -76,8 +78,8 @@ def text_font(size):
 
 # node class
 class Node():
-    def __init__(self, name, x, y, color):
-        self.name = name
+    def __init__(self, key, x, y, color):
+        self.key = key
         self.x = x
         self.y = y
         self.color = color
@@ -95,12 +97,41 @@ class Node():
         if self.selected:
             drawcolor = gray
 
-        self.rect = pygame.draw.circle(surface, drawcolor, self.location, 25)
-        drawText(self.name, text_font(12), red, self.x - 5, self.y - 5)
+        pygame.draw.circle(surface, drawcolor, self.location, 25)
+        drawText(str(self.key), text_font(12), red, self.x - 5, self.y - 5)
 
     def getrect(self, surface):
         self.rect = pygame.draw.circle(surface, self.color, self.location, 25)
         return self.rect
+
+
+# edge class
+class Edge():
+    def __init__(self, weight, first_parent, second_parent):
+        self.weight = weight
+        self.first_parent = first_parent
+        self.second_parent = second_parent
+
+    def draw(self, surface):
+        node_pos = user_locations[self.first_parent]
+        child_pos = user_locations[self.second_parent]
+
+        # draw line
+        pygame.draw.line(surface, white, node_pos, child_pos)
+
+        # draw weight
+        weight = self.weight
+        if node_pos[0] < child_pos[0]:
+            weight_xpos = node_pos[0] + abs(node_pos[0] - child_pos[0])/2
+        else:
+            weight_xpos = child_pos[0] + abs(node_pos[0] - child_pos[0])/2
+
+        if node_pos[1] < child_pos[1]:
+            weight_ypos = node_pos[1] + abs(node_pos[1] - child_pos[1])/2
+        else:
+            weight_ypos = child_pos[1] + abs(node_pos[1] - child_pos[1])/2
+
+        drawText(str(weight), text_font(12), red, weight_xpos + 5, weight_ypos + 5)
 
 
 
@@ -121,6 +152,7 @@ class Button():
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.length)
         self.clicked = False
+        self.toggle = False
 
     def draw(self, surface):
         action = False
@@ -128,13 +160,33 @@ class Button():
         pos = pygame.mouse.get_pos()
         
         if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == True and self.clicked == False:
+            if pygame.mouse.get_pressed()[0] == True and self.clicked == False:        
                 self.clicked = True
                 action = True
-                print(self.label + " click")
+                
+                new_r = self.color[0] - 50
+                new_g = self.color[1] - 50
+                new_b = self.color[2] - 50
 
+                if new_r < 0:
+                    new_r = new_r * -1
+                if new_g < 0:
+                    new_g = new_g * -1
+                if new_b < 0:
+                    new_b = new_b * -1
+
+                self.color = (new_r, new_g, new_b)
+                print(self.label + " click")
+            
         if pygame.mouse.get_pressed()[0] == False:
+            if self.clicked :
+                r = self.color[0] + 50
+                g = self.color[1] + 50
+                b = self.color[2] + 50
+                self.color = (r,g,b)
+
             self.clicked = False
+            
 
         pygame.draw.rect(surface, self.color, self.rect, border_radius = self.border_rad)
         drawText(self.label, text_font(self.label_size), white, self.label_x, self.label_y)
@@ -149,12 +201,15 @@ prev_button = Button(300, 800, 100, 75, gray, "prev", 20, 330, 820, 10)
 next_button = Button(600, 800, 100, 75, gray, "next", 20, 630, 820, 10)
 run_button = Button(450, 800, 100, 75, gray, "run", 20, 480, 820, 10)
 clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 160, 15)
+draw_tool = Button(10, 275, 30, 30, gray, "draw", 15, 10, 305, 5)
+draw_tool.toggle = True
 
 button_objs.add(exit_button)
 button_objs.add(prev_button)
 button_objs.add(next_button)
 button_objs.add(run_button)
 button_objs.add(clear_button)
+button_objs.add(draw_tool)
 
 
 
@@ -447,6 +502,13 @@ def main():
     node_list = []
     active_node = None
 
+    # can only place nodes when draw is toggled
+    draw = False
+
+    # selection queue for drawing edges
+    selectionq = deque()
+    edges = set()
+
     '''
     parents = dijkstra(my_graph, 'A')[1]
     print(parents)
@@ -469,6 +531,9 @@ def main():
         mouse_pos = pygame.mouse.get_pos()
         
 
+        for edge in edges:
+            edge.draw(screen)
+        
         for node_obj in node_objs: 
             node_obj.draw(screen)
 
@@ -487,6 +552,8 @@ def main():
         if exit_button.draw(screen):
             running = False
 
+        if draw_tool.draw(screen):
+            draw = not draw
 
         #run through dijkstra on graph
         if run_button.draw(screen):
@@ -517,27 +584,27 @@ def main():
                     for node in node_objs:
                         if node.rect.collidepoint(mouse_pos):
                             cursor_in_obj = True
-                            print("node " + node.name + " clicked")
+                            print("node " + str(node.key) + " clicked")
                     for button in button_objs:
                         if button.rect.collidepoint(mouse_pos):
                             cursor_in_obj = True
                     
                     # create node if cursor is not in any object
-                    if cursor_in_obj == False:
+                    if cursor_in_obj == False and draw:
                         user_locations[x] = mouse_pos
                         user_graph[x] = {}
-                        new_node = Node(str(x), mouse_pos[0], mouse_pos[1], white)
+                        new_node = Node(x, mouse_pos[0], mouse_pos[1], white)
                         node_objs.add(new_node)
                         print("created node " + str(x))
-                        node_list.append(new_node.getrect(screen))
+                        node_list.append(new_node)
                         x += 1
 
                     # setting active node for dragging
                     for num, node in enumerate(node_list):
-                        if node.collidepoint(mouse_pos):
+                        rect = node.getrect(screen)
+                        if rect.collidepoint(mouse_pos) and draw:
                             active_node = num
-                            print("length of node_list: " + str(len(node_list)))
-                            print("active node index: " + str(active_node))
+                            print("active node: " + str(active_node))
 
                 # node selection with right click
                 if event.button == 3: 
@@ -545,24 +612,43 @@ def main():
                         if node.rect.collidepoint(mouse_pos):
                             if node.selected == True:
                                 node.selected = False
-                                print("node " + node.name + " deselected")
+                                print("node " + str(node.key) + " deselected")
                             else: 
                                 node.selected = True
-                                print("node " + node.name + " selected")
+                                selectionq.append(node.key)
+                                print("node " + str(node.key) + " selected")
             
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1: 
                     active_node = None
+                    print("no active node")
         
             if event.type == pygame.MOUSEMOTION:
                 if active_node != None:
-                    node_list[active_node].move_ip(event.rel)
+                    new_node = None
+                    for num, node in enumerate(node_list):
+                        if num == active_node:
+                            new_node = node
+                        
+                    new_node.x = mouse_pos[0]
+                    new_node.y = mouse_pos[1]
+                    new_node.location = mouse_pos
             
-
-
+            # create edges from selected nodes
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_e:
+                    while selectionq:
+                        a = selectionq.popleft()        # pop first node in q
+                        if len(selectionq) > 0: 
+                            b = selectionq[0]               # peek next node
+                            user_graph[a] = b               # update user_graph with edge
+                            user_graph[b] = a
+                            new_edge = Edge(1, a, b)        # create new edge object and add to edge set
+                            edges.add(new_edge)             
+                            print("edge from " + str(a) + " to " + str(b) + " created")
                     
-
-
+        
+    
 
 
         pygame.display.flip()
