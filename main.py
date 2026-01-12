@@ -120,7 +120,11 @@ class Button():
 
         self.rect = pygame.Rect(self.x, self.y, self.width, self.length)
         self.clicked = False
+
         self.toggle = False
+        self.offcolor = color
+        self.oncolor = (max(color[0] - 50, 0), max(color[1] - 50, 0), max(color[2] - 50, 0))
+        self.is_on = False
 
     def draw(self, surface):
         action = False
@@ -131,30 +135,30 @@ class Button():
             if pygame.mouse.get_pressed()[0] == True and self.clicked == False:        
                 self.clicked = True
                 action = True
-                
-                new_r = self.color[0] - 50
-                new_g = self.color[1] - 50
-                new_b = self.color[2] - 50
 
-                if new_r < 0:
-                    new_r = new_r * -1
-                if new_g < 0:
-                    new_g = new_g * -1
-                if new_b < 0:
-                    new_b = new_b * -1
-
-                self.color = (new_r, new_g, new_b)
+                if self.toggle:
+                    self.is_on = not self.is_on
+                    if self.is_on:
+                        print(self.label + " is on")
+                        self.color = self.oncolor
+                    else:
+                        print(self.label + " is off")
+                        self.color = self.offcolor
+                else:
+                    self.color = self.oncolor
+                    
                 print(self.label + " click")
             
         if pygame.mouse.get_pressed()[0] == False:
-            if self.clicked :
-                r = self.color[0] + 50
-                g = self.color[1] + 50
-                b = self.color[2] + 50
-                self.color = (r,g,b)
+            if self.toggle == False:
+                if self.clicked:
+                    r = self.color[0] + 50
+                    g = self.color[1] + 50
+                    b = self.color[2] + 50
+                    self.color = (r,g,b)
 
             self.clicked = False
-            
+   
 
         pygame.draw.rect(surface, self.color, self.rect, border_radius = self.border_rad)
         drawText(self.label, text_font(self.label_size), white, self.label_x, self.label_y)
@@ -172,6 +176,7 @@ clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 160, 15)
 draw_tool = Button(10, 275, 30, 30, gray, "draw", 15, 10, 305, 5)
 draw_tool.toggle = True
 source_select_tool = Button(10, 335, 30, 30, gray, "source select", 15, 10, 365, 5)
+source_select_tool.toggle = True
 
 button_objs.add(exit_button)
 button_objs.add(prev_button)
@@ -425,8 +430,10 @@ def parseRecord(record, index, graph, source, locations, parents):
             # change color of node to green, add edge to shortest dist tree
             # write done next to node
             if node != source:
-                parent_loc = locations[parents[node]]
-                drawEdge(green, node_loc, parent_loc)
+                if parents[node] != None:
+                    parent_loc = locations[parents[node]]
+                    drawEdge(green, node_loc, parent_loc)
+
 
             drawNode(str(node), red, green, (node_x, node_y), 25)
 
@@ -502,10 +509,6 @@ def main():
         for node_obj in node_objs:
             node_obj.draw(screen)
 
-        if source_select_tool.draw(screen):
-            source_select = True
-
-
         if clear_button.draw(screen):
             screen.fill(black)
             clear_button.draw(screen)
@@ -526,19 +529,29 @@ def main():
             running = False
 
         if draw_tool.draw(screen):
-            draw = not draw
+            draw = draw_tool.is_on
+            source_select_tool.is_on = False
+
+        if source_select_tool.draw(screen):
+            source_select = source_select_tool.is_on
+            draw_tool.is_on = False
 
         #run through dijkstra on graph
         if x > 0:
             if run_button.draw(screen):
-                parents = dijkstra(user_graph, source.key)[1]
-
-                print()
-                print(" parents : " + str(parents))
-                record = dijkstra(user_graph, source.key)[2]
-                print("record: " + str(record))
-                dijkstra_running = True
-                index = 0
+                if source != None:
+                    print(" graph : " + str(user_graph))
+                    print()
+                    parents = dijkstra(user_graph, source.key)[1]
+                    print(" parents : " + str(parents))
+                    print()
+                    record = dijkstra(user_graph, source.key)[2]
+                    print(" record : " + str(record))
+                    print()
+                    dijkstra_running = True
+                    index = 0
+                else:
+                    print("please pick a source")
             
             if dijkstra_running:
                 if prev_button.draw(screen):
@@ -569,11 +582,15 @@ def main():
 
                             if source_select == True and draw == False:
                                 # check if any other nodes are already sources
-
-
+                                if source != None:
+                                    for node in node_objs:
+                                        if node.source:
+                                            node.source = False
+                                
                                 node.source = True
-                                source_select = False
                                 source = node
+                                source_select_tool.is_on = False
+                                print("source: " + str(source.key))
 
                     for button in button_objs:
                         if button.rect.collidepoint(mouse_pos):
@@ -595,7 +612,7 @@ def main():
                         rect = node.getrect(screen)
                         if rect.collidepoint(mouse_pos) and draw == False:
                             active_node = num
-                            print("active node: " + str(active_node))
+                            #print("active node: " + str(active_node))
 
                     
 
