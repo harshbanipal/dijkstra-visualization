@@ -75,20 +75,22 @@ class Node():
 
 # edge class
 class Edge():
-    def __init__(self, weight, first_parent, second_parent):
-        self.weight = weight
+    def __init__(self, first_parent, second_parent):
+        self.weight = 1
         self.first_parent = first_parent
         self.second_parent = second_parent
 
-    def draw(self, surface):
+        self.rect = pygame.Rect(0, 0, 100, 30)
+        self.rect_active_color = red
+        self.rect_passive_color = darkred
+        self.active = False
+
+        self.weight_text = ""
+
+    def getmidpoint(self):
         node_pos = (self.first_parent.x, self.first_parent.y)
         child_pos = (self.second_parent.x, self.second_parent.y)
 
-        # draw line
-        pygame.draw.line(surface, white, node_pos, child_pos)
-
-        # draw weight
-        weight = self.weight
         if node_pos[0] < child_pos[0]:
             weight_xpos = node_pos[0] + abs(node_pos[0] - child_pos[0])/2
         else:
@@ -99,7 +101,32 @@ class Edge():
         else:
             weight_ypos = child_pos[1] + abs(node_pos[1] - child_pos[1])/2
 
-        drawText(str(weight), text_font(12), red, weight_xpos + 5, weight_ypos + 5)
+        return (weight_xpos, weight_ypos)
+    
+    def draw(self, surface):
+        node_pos = (self.first_parent.x, self.first_parent.y)
+        child_pos = (self.second_parent.x, self.second_parent.y)
+
+        # draw line
+        pygame.draw.line(surface, white, node_pos, child_pos)
+
+    def draw_weight(self, surface):
+        if self.active:
+            color = self.rect_active_color
+        else:
+            color = self.rect_passive_color
+
+        weight_pos = self.getmidpoint()
+
+        # draw rect
+        self.rect.topleft = weight_pos
+        pygame.draw.rect(surface, color, self.rect, 2)
+        
+        # draw text
+        text_surface = drawText(str(self.weight), text_font(12), red, weight_pos[0] + 5, weight_pos[1] + 5)
+        
+        # allow spacing for rect to increase while typing
+        self.rect.w = max(20, text_surface.get_width() + 10)
 
 
 
@@ -123,7 +150,7 @@ class Button():
 
         self.toggle = False
         self.offcolor = color
-        self.oncolor = (max(color[0] - 50, 0), max(color[1] - 50, 0), max(color[2] - 50, 0))
+        self.oncolor = (max(color[0] - 70, 0), max(color[1] - 70, 0), max(color[2] - 70, 0))
         self.is_on = False
 
     def draw(self, surface):
@@ -238,6 +265,7 @@ def drawGraph(graph, locations):
 def drawText(text, font, color, x, y,):
     img = font.render(text, True, color)
     screen.blit(img, (x,y))
+    return img
 
 
 def drawShortestPaths(graph, parents, locations):
@@ -383,17 +411,17 @@ def parseRecord(record, index, graph, source, locations, parents):
             # display starting path dist by node (either inf or 0)
             # change color of node to gray
 
-            drawNode(str(node), red, gray, (node_x, node_y), 25)
-
             if node == source:
                 path_lengths[node] = 0
+                color = gold
                 #drawText("0", text_font(15), blue, node_x - 25, node_y - 40)
-
-                
             else:
                 path_lengths[node] = inf
+                color = gray
                 #drawText("inf", text_font(15), blue, node_x - 25, node_y - 40)
             
+            drawNode(str(node), red, color, (node_x, node_y), 25)
+
             revealed.add(node)
 
 
@@ -486,6 +514,8 @@ def main():
     source_select = False
     source = None
 
+    # init user text for edge weight
+    #user_text = ""
 
     clock = pygame.time.Clock()
 
@@ -505,6 +535,7 @@ def main():
 
         for edge in edges:
             edge.draw(screen)
+            edge.draw_weight(screen)
         
         for node_obj in node_objs:
             node_obj.draw(screen)
@@ -589,12 +620,18 @@ def main():
                                 
                                 node.source = True
                                 source = node
-                                source_select_tool.is_on = False
                                 print("source: " + str(source.key))
 
                     for button in button_objs:
                         if button.rect.collidepoint(mouse_pos):
                             cursor_in_obj = True
+
+                    for edge in edges:
+                        if edge.rect.collidepoint(mouse_pos):
+                            edge.active = True
+                            cursor_in_obj = True
+                        else:
+                            edge.active = False
                     
                     # create node if cursor is not in any object
                     if cursor_in_obj == False and draw:
@@ -649,6 +686,25 @@ def main():
             
             # create edges from selected nodes
             if event.type == pygame.KEYDOWN:
+                # change edge weight to user input
+                for edge in edges:
+                    if edge.active:
+                        if event.key == pygame.K_BACKSPACE:
+                            edge.weight_text = edge.weight_text[:-1]
+                        else:
+                            edge.weight_text += event.unicode
+                        
+                        if edge.weight_text == "":
+                            edge.weight = 1
+                        else:
+                            edge.weight = int(edge.weight_text)
+                        
+                        user_graph[edge.first_parent.key][edge.second_parent.key] = edge.weight
+                        user_graph[edge.second_parent.key][edge.first_parent.key] = edge.weight
+                    
+
+
+                # create edges between selected nodes upon pressing 'e'
                 if event.key == pygame.K_e:
                     while selectionq:
                         a = selectionq.popleft()        # pop first node in q
@@ -656,13 +712,14 @@ def main():
                             b = selectionq[0]               # peek next node
                             user_graph[a.key][b.key] = 1             # update user_graph with edge
                             user_graph[b.key][a.key] = 1
-                            new_edge = Edge(1, a, b)        # create new edge object and add to edge set
+                            new_edge = Edge(a, b)        # create new edge object and add to edge set
                             edges.add(new_edge)         
                             print("edge from " + str(a.key) + " to " + str(b.key) + " created")
 
                             # unselect all nodes
                             for node in node_objs:
                                 node.selected = False
+
                     
         
     
