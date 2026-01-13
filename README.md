@@ -16,17 +16,17 @@ contact: harshveerbanipal9@gmail.com
 
 ## Instructions to run/interface explained
 You first start with a blank graph with exit, clear, draw, and select source buttons. 
-> **EXIT**             When clicked, exits program
+- **EXIT:**             When clicked, exits program
 
-> **CLEAR**            When clicked, clears screen to initial, empty graph state
+- **CLEAR:**            When clicked, clears screen to initial, empty graph state
 
-> **DRAW**             When clicked, user can draw nodes by left clicking anywhere until draw is toggled off by clicking the button again. Once a node is initially drawn, a run button will appear.
+- **DRAW:**             When clicked, user can draw nodes by left clicking anywhere until draw is toggled off by clicking the button again. Once a node is initially drawn, a run button will appear.
 
-> **RUN**          When clicked, requires a source node to be selected and then runs dijkstra's algorithm on the user generated graph with the selected source node. This will cause prev and next buttons to appear\
-        >> **PREV**     When clicked, goes to the previous state of dijkstras until initial state is hit\
-        >> **NEXT**     When clicked, goes to the next state of dijkstras until final state is hit
+- **RUN:**          When clicked, requires a source node to be selected and then runs dijkstra's algorithm on the user generated graph with the selected source node. This will cause prev and next buttons to appear\
+    - **PREV:**     When clicked, goes to the previous state of dijkstras until initial state is hit\
+    - **NEXT:**     When clicked, goes to the next state of dijkstras until final state is hit
 
-> **SOURCE SELECT**    When clicked, user can select a source node for running dijkstra's on\
+- **SOURCE SELECT:**    When clicked, user can select a source node for running dijkstra's on\
 
 
 When draw is toggled off and there are nodes on the screen, the user can click and drag on a node to move it. Right clicking on a node selects it, where after selecting at least two nodes, the user can press 'e' to form an edge between the selected nodes. If more than two nodes are selected, the edges are created in order of selection.
