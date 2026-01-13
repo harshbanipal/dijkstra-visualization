@@ -1,16 +1,16 @@
 # dijkstra-visualization
-personal project for visualizing dijkstra's algorithm on a graph\
-contact: harshveerbanipal9@gmail.com
+Personal project for visualizing dijkstra's algorithm on a graph\
+Contact: harshveerbanipal9@gmail.com
 
 ---
 
 ## Instructions to build
 1. Install [Python](https://www.python.org/install) if you don't already have it\
-    Note: At the time of writing this, I don't think pygame supports the latest version of Python (3.14), so you can instead install pygame-ce or just an earlier version of python (3.13 or before)
+    > **Note:** At the time of writing this, I don't think pygame supports the latest version of Python (3.14), so you can instead install pygame-ce or just an earlier version of python (3.13 or before)
 
 2. Install [pygame](https://www.pygame.org/wiki/GettingStarted) or [pygame-ce](https://www.pypi.org/project/pygame-ce/)
 
-3. Download repo and access folder in terminal (`cd Downloads/dijkstra-visualization-main`) and enter `py -your_python_version -m main.py` (so if you downloaded Python 3.13, you would type `py -3.13 -m main.py`)
+3. Download the repo, access the folder in the terminal (`cd Downloads/dijkstra-visualization-main`), and enter `py -your_python_version -m main.py` (so if you downloaded Python 3.13, you would type `py -3.13 -m main.py`)
 
 ---
 
