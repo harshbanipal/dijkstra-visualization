@@ -60,10 +60,10 @@ class Node():
 
     def draw(self, surface):
         drawcolor = self.color
-        if self.selected:
-            drawcolor = gray
-        elif self.source:
+        if self.source:
             drawcolor = gold
+        if self.selected:
+            drawcolor = (max(drawcolor[0] - 70, 0), max(drawcolor[1] - 70, 0), max(drawcolor[2] - 70, 0))
 
         pygame.draw.circle(surface, drawcolor, self.location, 25)
         drawText(str(self.key), text_font(12), red, self.x - 5, self.y - 5)
@@ -514,10 +514,12 @@ def main():
     source_select = False
     source = None
 
-    # init user text for edge weight
-    #user_text = ""
-
-    clock = pygame.time.Clock()
+    # list of num keys
+    num_list = [pygame.K_0, pygame.K_1, pygame.K_2, 
+                pygame.K_3, pygame.K_4, pygame.K_5, 
+                pygame.K_6, pygame.K_7, pygame.K_8,
+                pygame.K_9]
+    
 
     dijkstra_running = False
     index = -1
@@ -611,12 +613,10 @@ def main():
                             cursor_in_obj = True
                             print("node " + str(node.key) + " clicked")
 
-                            if source_select == True and draw == False:
+                            if source_select and draw == False:
                                 # check if any other nodes are already sources
                                 if source != None:
-                                    for node in node_objs:
-                                        if node.source:
-                                            node.source = False
+                                    source.source = False
                                 
                                 node.source = True
                                 source = node
@@ -692,7 +692,10 @@ def main():
                         if event.key == pygame.K_BACKSPACE:
                             edge.weight_text = edge.weight_text[:-1]
                         else:
-                            edge.weight_text += event.unicode
+                            # check if key pressed is a number
+                            for key_press in num_list:
+                                if event.key == key_press:
+                                    edge.weight_text += event.unicode
                         
                         if edge.weight_text == "":
                             edge.weight = 1
