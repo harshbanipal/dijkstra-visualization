@@ -21,7 +21,7 @@ You first start with a blank graph with exit, clear, draw, and select source but
 - **CLEAR:**            When clicked, screen is cleared to initial, empty graph state
 
 - **DRAW:**             When clicked, the user can draw nodes by left clicking anywhere until draw is toggled off by clicking the button again. Once a node is initially drawn, a run button will appear.
-    - **RUN:**          When clicked, it requires a source node to be selected and then runs dijkstra's algorithm on the user generated graph with the selected source node. This will cause init, prev, next, skip buttons to appear
+    - **RUN:**          When clicked, it requires a source node to be selected and then runs dijkstra's algorithm on the user generated graph with the selected source node. This will cause init, prev, next, and skip buttons to appear
         - **INIT:**     When clicked, the graph goes to its initial state
         - **PREV:**     When clicked, the graph goes to the previous state of dijkstra's until initial state is hit
         - **NEXT:**     When clicked, the graph goes to the next state of dijkstra's until final state is hit
