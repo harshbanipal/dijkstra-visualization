@@ -27,7 +27,7 @@ You first start with a blank graph with exit, clear, draw, and select source but
 
 - **SOURCE SELECT:**    When clicked, the user can select a source node for running dijkstra's on
 
-When draw is toggled off and there are nodes on the screen, the user can click and drag on a node to move it. Right clicking on a node selects it, where after selecting at least two nodes, the user can press 'e' to form an edge between the selected nodes. If more than two nodes are selected, the edges are created in order of selection.
+When draw is toggled off and there are nodes on the screen, the user can click and drag on a node to move it. Right clicking on a node selects it, where after selecting at least two nodes, the user can press 'e' to form an edge between the selected nodes. If more than two nodes are selected, the edges are created in order of selection. Edges are initialized with a weight of 1, but the weight can be changed by clicking on the weight and typing the desired weight. Note that if your weight is 1, and you press backspace, you can still change it to your desired weight, its just that visually it will still appear as 1 until you change it.
 
 
 
