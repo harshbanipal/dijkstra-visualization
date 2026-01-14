@@ -21,13 +21,19 @@ You first start with a blank graph with exit, clear, draw, and select source but
 - **CLEAR:**            When clicked, screen is cleared to initial, empty graph state
 
 - **DRAW:**             When clicked, the user can draw nodes by left clicking anywhere until draw is toggled off by clicking the button again. Once a node is initially drawn, a run button will appear.
-    - **RUN:**          When clicked, it requires a source node to be selected and then runs dijkstra's algorithm on the user generated graph with the selected source node. This will cause prev and next buttons to appear
-        - **PREV:**     When clicked, the graph goes to the previous state of dijkstras until initial state is hit
-        - **NEXT:**     When clicked, the graph goes to the next state of dijkstras until final state is hit
+    - **RUN:**          When clicked, it requires a source node to be selected and then runs dijkstra's algorithm on the user generated graph with the selected source node. This will cause init, prev, next, skip buttons to appear
+        - **INIT:**     When clicked, the graph goes to its initial state
+        - **PREV:**     When clicked, the graph goes to the previous state of dijkstra's until initial state is hit
+        - **NEXT:**     When clicked, the graph goes to the next state of dijkstra's until final state is hit
+        - **SKIP:**     When clicked, the graph goes to the final state of dijkstra's
 
 - **SOURCE SELECT:**    When clicked, the user can select a source node for running dijkstra's on
 
-When draw is toggled off and there are nodes on the screen, the user can click and drag on a node to move it. Right clicking on a node selects it, where after selecting at least two nodes, the user can press 'e' to form an edge between the selected nodes. If more than two nodes are selected, the edges are created in order of selection. Edges are initialized with a weight of 1, but the weight can be changed by clicking on the weight and typing the desired weight. Note that if your weight is 1, and you press backspace, you can still change it to your desired weight, its just that visually it will still appear as 1 until you change it.
+When draw is toggled off and there are nodes on the screen, the user can click and drag on a node to move it. Right clicking on a node selects it, where after selecting at least two nodes, the user can press 'e' to form an edge between the selected nodes. If more than two nodes are selected, the edges are created in order of selection. Edges are initialized with a weight of 1, but the weight can be changed by clicking on the weight and typing the desired weight. 
+
+### Bugs/Unexpected behavior
+Note that while editing edge weight, if your weight is 1nand you press backspace, you can still change it to your desired weight, its just that visually it will still appear as 1 until you change it.
+Also sometimes if you try to select a node and it isn't selecting, you can left click on it first and then try to select it again. 
 
 
 

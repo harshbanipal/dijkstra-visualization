@@ -199,6 +199,8 @@ exit_button = Button(800, 100, 150, 50, darkred, "exit", 30, 840, 105, 15)
 prev_button = Button(300, 800, 100, 75, gray, "prev", 20, 330, 820, 10)
 next_button = Button(600, 800, 100, 75, gray, "next", 20, 630, 820, 10)
 run_button = Button(450, 800, 100, 75, gray, "run", 20, 480, 820, 10)
+skip_button = Button(730, 820, 45, 45, gray, "skip", 17, 735, 830, 10)
+init_button = Button(225, 820, 45, 45, gray, "init", 17, 240, 830, 10)
 clear_button = Button(800, 160, 150, 50, cerulean, "clear", 30, 830, 160, 15)
 draw_tool = Button(10, 275, 30, 30, gray, "draw", 15, 10, 305, 5)
 draw_tool.toggle = True
@@ -209,6 +211,8 @@ button_objs.add(exit_button)
 button_objs.add(prev_button)
 button_objs.add(next_button)
 button_objs.add(run_button)
+button_objs.add(skip_button)
+button_objs.add(init_button)
 button_objs.add(clear_button)
 button_objs.add(draw_tool)
 button_objs.add(source_select_tool)
@@ -519,8 +523,11 @@ def main():
                 pygame.K_3, pygame.K_4, pygame.K_5, 
                 pygame.K_6, pygame.K_7, pygame.K_8,
                 pygame.K_9]
-    
 
+    # prompt bool for when user clicks run without source
+    prompt = False
+
+    # run dijkstras with initial record index of -1
     dijkstra_running = False
     index = -1
 
@@ -557,7 +564,6 @@ def main():
             index = -1
             x = 0
 
-
         if exit_button.draw(screen):
             running = False
 
@@ -568,6 +574,9 @@ def main():
         if source_select_tool.draw(screen):
             source_select = source_select_tool.is_on
             draw_tool.is_on = False
+
+        if prompt:
+            drawText("please select a source", text_font(26), white, 450, 430)
 
         #run through dijkstra on graph
         if x > 0:
@@ -585,8 +594,15 @@ def main():
                     index = 0
                 else:
                     print("please pick a source")
+                    prompt = True
             
             if dijkstra_running:
+                if init_button.draw(screen):
+                    index = -1
+
+                if skip_button.draw(screen):
+                    index = len(record) -1
+
                 if prev_button.draw(screen):
                     index = max(index - 1, -1)
                     
@@ -621,6 +637,7 @@ def main():
                                 node.source = True
                                 source = node
                                 print("source: " + str(source.key))
+                                prompt = False
 
                     for button in button_objs:
                         if button.rect.collidepoint(mouse_pos):
@@ -723,9 +740,6 @@ def main():
                             for node in node_objs:
                                 node.selected = False
 
-                    
-        
-    
 
 
         pygame.display.flip()
