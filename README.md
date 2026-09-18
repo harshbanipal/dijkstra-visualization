@@ -4,13 +4,15 @@ Contact: harshveerbanipal9@gmail.com
 
 ---
 
+![Screenshot of visualizer in progress](<img width="992" height="986" alt="dijkstrasim" src="https://github.com/user-attachments/assets/abb655d5-25b2-4e92-bd52-116c3fa15198" />)
+
 ## Instructions to build
 1. Install [Python](https://www.python.org/install) if you don't already have it
     > **Note:** At the time of writing this, I don't think pygame supports the latest version of Python (3.14), so you can instead install pygame-ce--which supports 3.14--or just an earlier version of python (3.13 or before)
 
 2. Install [pygame](https://www.pygame.org/wiki/GettingStarted) or [pygame-ce](https://www.pypi.org/project/pygame-ce/)
 
-3. Download the repo, access the folder in the terminal (`cd Downloads/dijkstra-visualization-main`), and enter `py -your_python_version -m main.py` (so if you downloaded Python 3.13, you would type `py -3.13 -m main.py`)
+3. Download the repo, access the folder in the terminal (`cd Downloads/dijkstra-visualization-main`), and enter `py -your_python_version -m main.py` (so if you downloaded Python 3.13, you would type `py -3.13 -m main.py`, or just `python3 -m main.py`)
 
 ---
 
