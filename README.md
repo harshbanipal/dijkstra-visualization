@@ -4,7 +4,7 @@ Contact: harshveerbanipal9@gmail.com
 
 ---
 
-![Screenshot of visualizer in progress](<img width="992" height="986" alt="dijkstrasim" src="https://github.com/user-attachments/assets/abb655d5-25b2-4e92-bd52-116c3fa15198" />)
+![Screenshot of visualizer in progress](screenshot.png)
 
 ## Instructions to build
 1. Install [Python](https://www.python.org/install) if you don't already have it
